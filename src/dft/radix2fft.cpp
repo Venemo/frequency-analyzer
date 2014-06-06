@@ -1,4 +1,18 @@
 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+// This file is part of the frequency-analyzer application.
+// It is licensed to you under the terms of the MIT license.
+// http://opensource.org/licenses/MIT
+//
+// Copyright (c) 2014 Timur Kristóf
+
 #include <iostream>
 #include "radix2fft.h"
 
@@ -25,6 +39,7 @@ Radix2Fft::Radix2Fft(unsigned sampleCount) : Dft(sampleCount) {
 }
 
 std::vector<std::complex<float> > Radix2Fft::compute(const std::vector<float> &samples) {
+    // Check input size
     unsigned N = sampleCount();
     if (samples.size() < N) {
         std::cout << "sample count is: " << samples.size() << ", expected: " << N << std::endl;
@@ -44,18 +59,19 @@ std::vector<std::complex<float> > Radix2Fft::compute(const std::vector<float> &s
     unsigned pow2 = 1;
     for (unsigned level = 0; level < _log2sc; level++, pow2 *= 2) {
 
-        // Calculate exponential multipliers
+        // Calculate exponential multipliers for the current stage
         std::vector<std::complex<float> > multipliers(pow2);
         for (unsigned i = 0; i < pow2; i++) {
             multipliers[i] = std::exp((-j * 2.0f * pi / (float)(pow2 * 2)) * (float)i);
         }
 
+        // Do each DFT in this stage
         for (unsigned a = 0; a < N; a += pow2 * 2) {
-            // All the butterflies for a stage
+            // Visit all butterflies in the current DFT
             for (unsigned b = 0; b < pow2; b++) {
                 unsigned i = a + b;
 
-                // A single butterfly
+                // Compute a single butterfly
                 auto u = result[i];
                 auto v = result[i + pow2] * multipliers[b];
                 result[i] = u + v;
