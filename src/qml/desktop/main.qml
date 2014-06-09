@@ -124,6 +124,7 @@ ApplicationWindow {
 
                 minimumValue: 0.005
                 maximumValue: 0.1
+                stepSize: 0.005
                 value: 0.05
             }
         }
