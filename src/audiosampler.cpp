@@ -71,7 +71,9 @@ bool AudioSampler::start() {
     qDebug() << "using default recording device:" << _device.deviceName();
 
     // TODO: handle device hotplugging
+    _state = QAudio::IdleState;
     _input = new QAudioInput(_device, _format, this);
+    QObject::connect(_input, &QAudioInput::stateChanged, this, &AudioSampler::audioInputStateChanged);
     this->open(QIODevice::WriteOnly);
     _input->start(this);
 
@@ -117,6 +119,8 @@ qint64 AudioSampler::readData(char *data, qint64 maxlen) {
 qint64 AudioSampler::writeData(const char *data, qint64 len) {
     if (!_started)
         return len;
+    if (_state != QAudio::ActiveState)
+        return len;
 
     // Assuming little endian, 1-channel, 16-bit unsigned integer samples
     Q_ASSERT(len % 2 == 0);
@@ -132,4 +136,8 @@ qint64 AudioSampler::writeData(const char *data, qint64 len) {
     }
 
     return len;
+}
+
+void AudioSampler::audioInputStateChanged(QAudio::State state) {
+    _state = state;
 }

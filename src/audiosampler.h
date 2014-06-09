@@ -35,6 +35,7 @@ private:
     QAudioInput *_input;
     std::vector<float> *_samples;
     bool _started;
+    QAudio::State _state;
     quint32 _samplesToWait;
 
 public:
@@ -57,6 +58,7 @@ signals:
 
 private slots:
     void elapsed();
+    void audioInputStateChanged(QAudio::State state);
 };
 
 #endif // AUDIOSAMPLER_H
