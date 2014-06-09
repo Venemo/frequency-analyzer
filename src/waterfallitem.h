@@ -32,6 +32,7 @@ class WaterfallItem : public QQuickPaintedItem
     Q_PROPERTY(float sensitivity READ sensitivity WRITE setSensitivity NOTIFY sensitivityChanged)
 
     QImage _image;
+    QList<QRgb> _colors;
     AudioSampler _sampler;
     Dft *_dft;
     bool _samplesUpdated;

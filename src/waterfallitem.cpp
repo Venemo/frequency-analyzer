@@ -13,9 +13,10 @@
 //
 // Copyright (c) 2014 Timur Kristóf
 
-#include <QPainter>
-#include <QDebug>
-#include <QCoreApplication>
+#include <QtCore/QDebug>
+#include <QtCore/QCoreApplication>
+#include <QtGui/QPixmap>
+#include <QtGui/QPainter>
 #include <cmath>
 #include <cfloat>
 #include <climits>
@@ -25,13 +26,14 @@
 WaterfallItem::WaterfallItem(QQuickItem *parent)
     : QQuickPaintedItem(parent) {
 
-    this->setVisible(true);
-    this->setFlag(QQuickItem::ItemHasContents);
-
+    // Initialize connections
     QObject::connect(&_sampler, &AudioSampler::samplesCollected, this, &WaterfallItem::samplesCollected);
     QObject::connect(this, &QQuickItem::widthChanged, this, &WaterfallItem::sizeChanged);
     QObject::connect(this, &QQuickItem::heightChanged, this, &WaterfallItem::sizeChanged);
 
+    // Initialize properties
+    this->setVisible(true);
+    this->setFlag(QQuickItem::ItemHasContents);
     _samplesUpdated = false;
     _sampleNumber = _sampler.samplesToWait();
     _image = QImage((int)this->width(), (int)this->height(), QImage::Format_ARGB32);
@@ -39,6 +41,29 @@ WaterfallItem::WaterfallItem(QQuickItem *parent)
     _dft = new Radix2Fft(_sampleNumber);
     _sensitivity = 0.05;
 
+    // Generate displayable colors
+    QImage img(500, 1, QImage::Format_ARGB32);
+    _colors.reserve(img.height());
+    QPainter painter;
+    painter.begin(&img);
+    QLinearGradient gradient;
+    gradient.setStart(0, 0);
+    gradient.setFinalStop(img.width(), 0);
+    gradient.setColorAt(0, QColor(255, 255, 255));
+    gradient.setColorAt(0.2, QColor(0, 0, 255));
+    gradient.setColorAt(0.4, QColor(255, 240, 0));
+    gradient.setColorAt(0.6, QColor(255, 0, 0));
+    gradient.setColorAt(1, QColor(0, 0, 0));
+    gradient.setSpread(QGradient::PadSpread);
+    painter.fillRect(QRect(0, 0, img.width(), 1), QBrush(gradient));
+    painter.end();
+    for (int i = 0; i < img.width(); i++) {
+        QRgb rgb = img.pixel(i, 0);
+        qDebug() << i << QColor(rgb);
+        _colors.append(rgb);
+    }
+
+    // Repaint this item
     update();
 }
 
@@ -117,16 +142,13 @@ void WaterfallItem::samplesCollected(std::vector<float> *samples) {
     for (int x = 0; x < img.width(); x++) {
         unsigned i1 = x * _sampleNumber / 10 / img.width();
         float amplitude = std::log10(std::abs(result[i1]));
-        int value = amplitude * _sensitivity * 255;
-
+        int value = (int)(amplitude * (float)_sensitivity * (float)_colors.length());
         if (value < 0)
             value = 0;
-        if (value > 255)
-            value = 255;
+        if (value >= _colors.length())
+            value = _colors.length() - 1;
 
-        value = 255 - value;
-
-        painter.setPen(QColor(value, value, value));
+        painter.setPen(_colors[value]);
         painter.drawRect(x, 0, 1, 5);
     }
 
