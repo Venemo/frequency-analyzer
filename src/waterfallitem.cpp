@@ -59,7 +59,6 @@ WaterfallItem::WaterfallItem(QQuickItem *parent)
     painter.end();
     for (int i = 0; i < img.width(); i++) {
         QRgb rgb = img.pixel(i, 0);
-        qDebug() << i << QColor(rgb);
         _colors.append(rgb);
     }
 
